@@ -101,7 +101,11 @@ func (c *Codec) WriteResponse(r *rpc.Response, body any) error { //nolint:funlen
 
 	switch {
 	case codec.(byte)&frame.CodecProto != 0:
-		d, err := proto.Marshal(body.(proto.Message))
+		pOut, ok := body.(proto.Message)
+		if !ok {
+			return c.handleError(r, fr, "response body is not a proto.Message")
+		}
+		d, err := proto.Marshal(pOut)
 		if err != nil {
 			return c.handleError(r, fr, err.Error())
 		}
