@@ -47,7 +47,17 @@ func NewCodec(rwc io.ReadWriteCloser) *Codec {
 
 // NewCodecWithRelay initiates new server rpc codec with a relay of choice.
 func NewCodecWithRelay(relay relay.Relay) *Codec {
-	return &Codec{relay: relay}
+	return &Codec{
+		relay: relay,
+
+		bPool: sync.Pool{New: func() any {
+			return new(bytes.Buffer)
+		}},
+
+		fPool: sync.Pool{New: func() any {
+			return frame.NewFrame()
+		}},
+	}
 }
 
 func (c *Codec) get() *bytes.Buffer {
@@ -286,6 +296,11 @@ func (c *Codec) storeCodec(r *rpc.Request, flag byte) error {
 func (c *Codec) ReadRequestBody(out any) error {
 	const op = errors.Op("goridge_read_request_body")
 	if out == nil {
+		// net/rpc drains the body with a nil out for unresolvable requests;
+		// return the frame (set in ReadRequestHeader) to the pool instead of leaking it.
+		if c.frame != nil {
+			c.putFrame(c.frame)
+		}
 		return nil
 	}
 

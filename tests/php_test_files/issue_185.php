@@ -1,7 +1,7 @@
 <?php
 
 use Spiral\Goridge;
-require "vendor/autoload.php";
+require __DIR__ . '/vendor/autoload.php';
 
 $rpc = new Goridge\RPC\RPC(
     Goridge\Relay::create('tcp://127.0.0.1:6001')
